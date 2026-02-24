@@ -13,12 +13,15 @@ export default function ProductCard({ product }: { product: Product }) {
     <div className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
       <div className="relative aspect-square bg-slate-100">
         <Image
-          src={img}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          sizes="(max-width: 768px) 100vw, 25vw"
-        />
+  src={img}
+  alt={product.name}
+  fill
+  sizes="(max-width: 768px) 100vw, 25vw"
+  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+  onError={(e: any) => {
+    e.currentTarget.src = "/placeholders/product.png";
+  }}
+/>
 
         <div className="absolute left-3 top-3 rounded-full bg-white/80 backdrop-blur px-3 py-1 text-[11px] font-extrabold text-slate-800 border border-white/60">
           {prettyCategory(product.category)}

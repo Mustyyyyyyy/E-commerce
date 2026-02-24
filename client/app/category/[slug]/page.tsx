@@ -8,10 +8,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-const ALLOWED = ["electronics", "home-appliances", "fashion-beauty"] as const;
-type AllowedSlug = (typeof ALLOWED)[number];
+const ALLOWED = new Set(["electronics", "home-appliances", "fashion-beauty"]);
 
-const TITLES: Record<AllowedSlug, string> = {
+const TITLES: Record<string, string> = {
   electronics: "Electronics",
   "home-appliances": "Home Appliances",
   "fashion-beauty": "Fashion & Beauty",
@@ -21,20 +20,21 @@ export default async function CategoryPage({
   params,
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: Record<string, string | string[] | undefined>;
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const slug = params.slug as AllowedSlug;
-  if (!ALLOWED.includes(slug)) return notFound();
+  const { slug } = await params;
+  const sp = await searchParams;
+
+  if (!ALLOWED.has(slug)) return notFound();
 
   const qs = new URLSearchParams();
   const setIf = (k: string) => {
-    const v = searchParams[k];
+    const v = sp[k];
     const val = Array.isArray(v) ? v[0] : v;
     if (val) qs.set(k, val);
   };
 
-  // force category from slug
   qs.set("category", slug);
   setIf("q");
   setIf("minPrice");
@@ -68,10 +68,10 @@ export default async function CategoryPage({
           </div>
 
           <Link
-            href="/shop"
+            href={`/shop?category=${slug}`}
             className="inline-flex items-center gap-2 text-sm font-extrabold text-sky-600 hover:underline"
           >
-            Go to Shop <ArrowRight className="h-4 w-4" />
+            Open in Shop <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
@@ -104,7 +104,7 @@ export default async function CategoryPage({
               ))}
             </div>
 
-            <Pagination page={page} totalPages={data.totalPages} slug={slug} searchParams={searchParams} />
+            <Pagination page={page} totalPages={data.totalPages} slug={slug} searchParams={sp} />
           </>
         )}
       </main>

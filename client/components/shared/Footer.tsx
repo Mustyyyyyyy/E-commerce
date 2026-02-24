@@ -57,10 +57,10 @@ export default function Footer() {
           {/* Links */}
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-5">
             <FooterCol title="Shop">
-              <FooterLink href="/shop">All Products</FooterLink>
-              <FooterLink href="/shop">New Arrivals</FooterLink>
-              <FooterLink href="/shop">Featured</FooterLink>
-              <FooterLink href="/shop">Discounts</FooterLink>
+              <FooterLink href="/category/shop">All Products</FooterLink>
+              <FooterLink href="/category/shop">New Arrivals</FooterLink>
+              <FooterLink href="/category/shop">Featured</FooterLink>
+              <FooterLink href="/category/shop">Discounts</FooterLink>
             </FooterCol>
 
             <FooterCol title="Categories">
