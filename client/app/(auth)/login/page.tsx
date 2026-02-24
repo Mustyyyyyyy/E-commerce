@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import { apiClient } from "@/lib/api-client";
@@ -9,6 +10,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginSkeleton />}>
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get("next") || "/";
@@ -48,11 +57,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#f6f7f8]">
       <Navbar />
-
       <main className="mx-auto max-w-md px-4 py-12">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-extrabold text-slate-900">Login</h1>
-          <p className="mt-1 text-sm text-slate-500">Welcome back. Enter your details.</p>
 
           <form onSubmit={login} className="mt-6 space-y-3">
             <input
@@ -80,7 +87,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="mt-2 w-full rounded-2xl bg-sky-600 px-5 py-3 font-extrabold text-white hover:opacity-90 disabled:opacity-60"
+              className="w-full rounded-2xl bg-sky-600 px-5 py-3 font-extrabold text-white hover:opacity-90 disabled:opacity-60"
             >
               {loading ? "Logging in..." : "Login"}
             </button>
@@ -94,8 +101,25 @@ export default function LoginPage() {
           </p>
         </div>
       </main>
-
       <Footer />
+    </div>
+  );
+}
+
+function LoginSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#f6f7f8]">
+      <div className="h-16 border-b border-slate-200 bg-white" />
+      <main className="mx-auto max-w-md px-4 py-12">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="h-7 w-28 rounded bg-slate-200 animate-pulse" />
+          <div className="mt-6 space-y-3">
+            <div className="h-11 rounded-2xl bg-slate-200 animate-pulse" />
+            <div className="h-11 rounded-2xl bg-slate-200 animate-pulse" />
+            <div className="h-12 rounded-2xl bg-slate-200 animate-pulse" />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
