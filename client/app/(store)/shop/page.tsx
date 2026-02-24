@@ -1,42 +1,30 @@
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import ProductCard from "@/components/store/ProductCard";
+import ShopFilters from "@/components/store/ShopFilters";
 import SkeletonCard from "@/components/store/SkeletonCard";
 import { apiGet } from "@/lib/api";
 import type { ProductsResponse } from "@/lib/types";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-const ALLOWED = ["electronics", "home-appliances", "fashion-beauty"] as const;
-type AllowedSlug = (typeof ALLOWED)[number];
-
-const TITLES: Record<AllowedSlug, string> = {
-  electronics: "Electronics",
-  "home-appliances": "Home Appliances",
-  "fashion-beauty": "Fashion & Beauty",
-};
-
-export default async function CategoryPage({
-  params,
+export default async function ShopPage({
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const slug = params.slug as AllowedSlug;
-  if (!ALLOWED.includes(slug)) return notFound();
+  const sp = await searchParams; // ✅ IMPORTANT
 
   const qs = new URLSearchParams();
+
   const setIf = (k: string) => {
-    const v = searchParams[k];
+    const v = sp[k];
     const val = Array.isArray(v) ? v[0] : v;
     if (val) qs.set(k, val);
   };
 
-  // force category from slug
-  qs.set("category", slug);
   setIf("q");
+  setIf("category");
   setIf("minPrice");
   setIf("maxPrice");
   setIf("inStock");
@@ -59,22 +47,26 @@ export default async function CategoryPage({
       <Navbar />
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-black">{TITLES[slug]}</h1>
+            <h1 className="text-3xl font-black">Shop</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Browse products in {TITLES[slug].toLowerCase()}.
+              Search and filter products across all categories.
             </p>
           </div>
 
           <Link
-            href="/shop"
+            href="/"
             className="inline-flex items-center gap-2 text-sm font-extrabold text-sky-600 hover:underline"
           >
-            Go to Shop <ArrowRight className="h-4 w-4" />
+            Back to Home <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
+        {/* Filters */}
+        <ShopFilters />
+
+        {/* Body */}
         {errorMsg ? (
           <ErrBlock msg={errorMsg} />
         ) : !data ? (
@@ -87,13 +79,13 @@ export default async function CategoryPage({
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8">
             <div className="text-lg font-black">No products found</div>
             <div className="mt-1 text-sm text-slate-500">
-              Add products in this category from Admin → Products.
+              Try changing your search or clearing filters.
             </div>
             <Link
-              href="/admin/products/new"
+              href="/shop"
               className="mt-5 inline-flex rounded-2xl bg-sky-600 px-5 py-3 text-sm font-extrabold text-white hover:opacity-90"
             >
-              Add a product
+              Clear filters
             </Link>
           </div>
         ) : (
@@ -104,7 +96,7 @@ export default async function CategoryPage({
               ))}
             </div>
 
-            <Pagination page={page} totalPages={data.totalPages} slug={slug} searchParams={searchParams} />
+            <Pagination page={page} totalPages={data.totalPages} searchParams={sp} />
           </>
         )}
       </main>
@@ -117,12 +109,10 @@ export default async function CategoryPage({
 function Pagination({
   page,
   totalPages,
-  slug,
   searchParams,
 }: {
   page: number;
   totalPages: number;
-  slug: string;
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   if (!totalPages || totalPages <= 1) return null;
@@ -134,7 +124,7 @@ function Pagination({
       if (val && k !== "page") qs.set(k, val);
     });
     qs.set("page", String(p));
-    return `/category/${slug}?${qs.toString()}`;
+    return `/shop?${qs.toString()}`;
   };
 
   return (

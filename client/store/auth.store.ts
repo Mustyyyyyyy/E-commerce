@@ -14,8 +14,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      setAuth: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+
+      setAuth: (token, user) => {
+        localStorage.setItem("token", token); 
+        set({ token, user });
+      },
+
+      logout: () => {
+        localStorage.removeItem("token");
+        set({ token: null, user: null });
+      },
     }),
     { name: "premiumstore_auth_v1" }
   )

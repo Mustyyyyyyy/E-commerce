@@ -8,9 +8,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
-const ALLOWED = new Set(["electronics", "home-appliances", "fashion-beauty"]);
+const ALLOWED = ["electronics", "home-appliances", "fashion-beauty"] as const;
+type AllowedSlug = (typeof ALLOWED)[number];
 
-const TITLES: Record<string, string> = {
+const TITLES: Record<AllowedSlug, string> = {
   electronics: "Electronics",
   "home-appliances": "Home Appliances",
   "fashion-beauty": "Fashion & Beauty",
@@ -23,10 +24,11 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { slug } = await params;
-  const sp = await searchParams;
+  const { slug } = await params;                
+  const sp = await searchParams;                 
 
-  if (!ALLOWED.has(slug)) return notFound();
+  const category = slug as AllowedSlug;
+  if (!ALLOWED.includes(category)) return notFound();
 
   const qs = new URLSearchParams();
   const setIf = (k: string) => {
@@ -35,7 +37,7 @@ export default async function CategoryPage({
     if (val) qs.set(k, val);
   };
 
-  qs.set("category", slug);
+  qs.set("category", category);
   setIf("q");
   setIf("minPrice");
   setIf("maxPrice");
@@ -61,14 +63,14 @@ export default async function CategoryPage({
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black">{TITLES[slug]}</h1>
+            <h1 className="text-3xl font-black">{TITLES[category]}</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Browse products in {TITLES[slug].toLowerCase()}.
+              Browse products in {TITLES[category].toLowerCase()}.
             </p>
           </div>
 
           <Link
-            href={`/shop?category=${slug}`}
+            href={`/shop?category=${category}`}
             className="inline-flex items-center gap-2 text-sm font-extrabold text-sky-600 hover:underline"
           >
             Open in Shop <ArrowRight className="h-4 w-4" />
@@ -104,7 +106,12 @@ export default async function CategoryPage({
               ))}
             </div>
 
-            <Pagination page={page} totalPages={data.totalPages} slug={slug} searchParams={sp} />
+            <Pagination
+              page={page}
+              totalPages={data.totalPages}
+              slug={category}
+              searchParams={sp}
+            />
           </>
         )}
       </main>
