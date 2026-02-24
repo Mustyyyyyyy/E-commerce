@@ -17,8 +17,32 @@ const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
 
+const allowedOrigins = (env.CLIENT_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 app.use(helmet());
-app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); 
+
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+
+      if (origin.endsWith(".vercel.app")) return cb(null, true);
+
+      return cb(new Error(`CORS blocked: ${origin}`), false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.options("*", cors());
+
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));
 

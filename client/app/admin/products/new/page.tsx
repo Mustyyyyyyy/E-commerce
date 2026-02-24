@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/shared/Navbar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminTopbar from "@/components/admin/AdminTopbar.tsx";
+import AdminTopbar from "@/components/admin/AdminTopbar";
 import { apiClient } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import Link from "next/link";

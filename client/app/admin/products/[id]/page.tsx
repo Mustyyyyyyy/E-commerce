@@ -2,7 +2,7 @@
 
 import Navbar from "@/components/shared/Navbar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminTopbar from "@/components/admin/AdminTopbar.tsx";
+import AdminTopbar from "@/components/admin/AdminTopbar";
 import ImageUploader from "@/components/admin/ImageUploader";
 import { apiClient } from "@/lib/api-client";
 import type { ProductCategory, ProductVariant } from "@/lib/types";
