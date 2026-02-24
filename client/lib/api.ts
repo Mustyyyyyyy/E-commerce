@@ -1,25 +1,18 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
-if (!API_URL) {
- 
-  console.warn("⚠️ NEXT_PUBLIC_API_URL is not set");
-}
+export async function apiGet<T>(path: string): Promise<T> {
+  const url = `${BASE}${path}`;
 
-export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    cache: "no-store",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
+  const res = await fetch(url, { cache: "no-store" });
 
-  const data = await res.json().catch(() => null);
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+  }
 
   if (!res.ok) {
-    const msg = data?.message || `Request failed: ${res.status}`;
-    throw new Error(msg);
+    throw new Error(data?.message || `Request failed: ${res.status} (${url})`);
   }
 
   return data as T;

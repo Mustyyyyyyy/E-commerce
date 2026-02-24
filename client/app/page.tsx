@@ -5,7 +5,7 @@ import ProductCard from "@/components/store/ProductCard";
 import SkeletonCard from "@/components/store/SkeletonCard";
 import { apiGet } from "@/lib/api";
 import type { Product, ProductsResponse } from "@/lib/types";
-import { ArrowRight, Truck, ShieldCheck, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, RotateCcw, Sparkles, Plus } from "lucide-react";
 
 async function getFeatured(): Promise<Product[]> {
   const res = await apiGet<ProductsResponse>("/api/products?featured=true&limit=8");
@@ -29,9 +29,10 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#f6f7f8] text-slate-900">
       <Navbar />
 
+      {/* HERO */}
       <section className="relative bg-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-white via-white to-[#f6f7f8]" />
         <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-sky-200/40 blur-3xl" />
@@ -46,13 +47,11 @@ export default async function HomePage() {
               </div>
 
               <h1 className="mt-6 text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight">
-                Shop Quality Products,{" "}
-                <span className="text-sky-600">Delivered Fast</span>
+                Shop Quality Products, <span className="text-sky-600">Delivered Fast</span>
               </h1>
 
               <p className="mt-6 text-base sm:text-lg lg:text-xl text-slate-600">
-                Experience premium electronics, home appliances, and fashion & beauty curated for
-                your modern lifestyle. Quality guaranteed.
+                Experience premium electronics, home appliances, and fashion & beauty curated for your modern lifestyle.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -91,6 +90,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* CATEGORIES */}
       <section id="categories" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <SectionHeader
           title="Shop by Category"
@@ -120,61 +120,52 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* VALUE PROPS */}
       <section className="bg-sky-600/5 py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Value
-            icon={<Truck className="h-6 w-6 text-sky-600" />}
-            title="Fast Delivery"
-            desc="Same day shipping on all orders placed before 2 PM."
-          />
-          <Value
-            icon={<ShieldCheck className="h-6 w-6 text-sky-600" />}
-            title="Secure Payment"
-            desc="Industry-leading encryption protecting your data."
-          />
-          <Value
-            icon={<RotateCcw className="h-6 w-6 text-sky-600" />}
-            title="Easy Returns"
-            desc="30-day no-questions-asked return policy."
-          />
+          <Value icon={<Truck className="h-6 w-6 text-sky-600" />} title="Fast Delivery" desc="Same day shipping on all orders placed before 2 PM." />
+          <Value icon={<ShieldCheck className="h-6 w-6 text-sky-600" />} title="Secure Payment" desc="Industry-leading encryption protecting your data." />
+          <Value icon={<RotateCcw className="h-6 w-6 text-sky-600" />} title="Easy Returns" desc="30-day no-questions-asked return policy." />
         </div>
       </section>
 
+      {/* FEATURED */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <SectionHeader
-          title="Featured Products"
-          subtitle="Hand-picked items people love right now"
-          ctaHref="/shop"
-          ctaText="View all"
-        />
+        <SectionHeader title="Featured Products" subtitle="Hand-picked items people love right now" ctaHref="/shop" ctaText="View all" />
 
         {errorMsg ? (
           <ErrBlock msg={errorMsg} />
+        ) : featured.length === 0 ? (
+          <EmptyProducts
+            title="No featured products yet"
+            desc="Add products from Admin and mark them as Featured."
+          />
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {(featured?.length ? featured : Array.from({ length: 8 })).map((p: any, idx) =>
-              p?.slug ? <ProductCard key={p._id} product={p} /> : <SkeletonCard key={idx} />
-            )}
+            {featured.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
           </div>
         )}
       </section>
 
+      {/* NEW ARRIVALS */}
       <section className="bg-[#f6f7f8] py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader
-            title="New Arrivals"
-            subtitle="Fresh drops added recently — don’t miss out"
-            ctaHref="/shop"
-            ctaText="See what’s new"
-          />
+          <SectionHeader title="New Arrivals" subtitle="Fresh drops added recently — don’t miss out" ctaHref="/shop" ctaText="See what’s new" />
 
           {errorMsg ? (
             <ErrBlock msg={errorMsg} />
+          ) : newArrivals.length === 0 ? (
+            <EmptyProducts
+              title="No products yet"
+              desc="Upload your first products from Admin → Products."
+            />
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {(newArrivals?.length ? newArrivals : Array.from({ length: 8 })).map((p: any, idx) =>
-                p?.slug ? <ProductCard key={p._id} product={p} /> : <SkeletonCard key={idx} />
-              )}
+              {newArrivals.map((p) => (
+                <ProductCard key={p._id} product={p} />
+              ))}
             </div>
           )}
 
@@ -200,6 +191,22 @@ export default async function HomePage() {
   );
 }
 
+function EmptyProducts({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-8">
+      <div className="text-lg font-black">{title}</div>
+      <div className="mt-1 text-sm text-slate-500">{desc}</div>
+      <a
+        href="/admin/products/new"
+        className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 text-sm font-extrabold text-white hover:opacity-90"
+      >
+        <Plus className="h-4 w-4" />
+        Add a product
+      </a>
+    </div>
+  );
+}
+
 function SectionHeader({
   title,
   subtitle,
@@ -217,30 +224,17 @@ function SectionHeader({
         <h2 className="text-3xl font-black">{title}</h2>
         <p className="text-slate-500 mt-2">{subtitle}</p>
       </div>
-      <a
-        className="hidden sm:flex items-center gap-2 text-sky-600 font-extrabold hover:gap-3 transition-all"
-        href={ctaHref}
-      >
+      <a className="hidden sm:flex items-center gap-2 text-sky-600 font-extrabold hover:gap-3 transition-all" href={ctaHref}>
         {ctaText} <ArrowRight className="h-4 w-4" />
       </a>
     </div>
   );
 }
 
-function Value({
-  icon,
-  title,
-  desc,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
+function Value({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col items-center text-center gap-3">
-      <div className="w-14 h-14 rounded-full bg-sky-600/5 flex items-center justify-center">
-        {icon}
-      </div>
+      <div className="w-14 h-14 rounded-full bg-sky-600/5 flex items-center justify-center">{icon}</div>
       <h4 className="font-black">{title}</h4>
       <p className="text-sm text-slate-500 max-w-xs">{desc}</p>
     </div>

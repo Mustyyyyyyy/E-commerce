@@ -14,7 +14,6 @@ const orderRoutes = require("./routes/order.routes");
 const couponRoutes = require("./routes/coupon.routes");
 const adminRoutes = require("./routes/admin.routes");
 const uploadRoutes = require("./routes/upload.routes");
-
 const app = express();
 
 const allowedOrigins = (env.CLIENT_ORIGIN || "")

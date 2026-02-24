@@ -13,7 +13,7 @@ export default async function ShopPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const sp = await searchParams; // ✅ IMPORTANT
+  const sp = await searchParams; 
 
   const qs = new URLSearchParams();
 
@@ -63,10 +63,8 @@ export default async function ShopPage({
           </Link>
         </div>
 
-        {/* Filters */}
         <ShopFilters />
 
-        {/* Body */}
         {errorMsg ? (
           <ErrBlock msg={errorMsg} />
         ) : !data ? (
