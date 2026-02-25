@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 
-export default function ImageUploader({
-  onUploaded,
-}: {
-  onUploaded: (urls: string[]) => void;
-}) {
+export default function ImageUploader({ onUploaded }: { onUploaded: (urls: string[]) => void }) {
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -14,7 +10,7 @@ export default function ImageUploader({
   const BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    setFiles(Array.from(e.target.files || []));
+    setFiles(Array.from(e.target.files || []).slice(0, 8));
     setMsg("");
   }
 
@@ -25,7 +21,7 @@ export default function ImageUploader({
     if (!files.length) return setMsg("Select at least 1 image.");
 
     const token = localStorage.getItem("token");
-    if (!token) return setMsg("You are not logged in. Please login again.");
+    if (!token) return setMsg("You are not logged in.");
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -35,9 +31,12 @@ export default function ImageUploader({
       const form = new FormData();
       for (const f of files) form.append("images", f);
 
+      const BASE = process.env.NEXT_PUBLIC_API_URL || "";
       const res = await fetch(`${BASE}/api/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: form,
         signal: controller.signal,
       });
@@ -51,7 +50,7 @@ export default function ImageUploader({
 
       onUploaded(urls);
       setFiles([]);
-      setMsg("Uploaded");
+      setMsg("Uploaded ✅");
     } catch (e: any) {
       if (e?.name === "AbortError") setMsg("Upload timed out. Check backend/Cloudinary.");
       else setMsg(e?.message || "Upload failed");
@@ -70,7 +69,7 @@ export default function ImageUploader({
 
       <input type="file" accept="image/*" multiple onChange={onPick} className="mt-4 block w-full text-sm" />
 
-      {!!files.length && (
+      {files.length > 0 && (
         <div className="mt-3 text-xs text-slate-500">
           Selected: <b>{files.length}</b> file(s)
         </div>
