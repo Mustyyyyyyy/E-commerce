@@ -3,11 +3,13 @@
 import Navbar from "@/components/shared/Navbar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
-import ImageUploader from "@/components/admin/ImageUploader";
+import ManualImageUrls from "@/components/admin/ManualImageUrls";
+
 import { apiClient } from "@/lib/api-client";
 import type { ProductCategory, ProductVariant } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "electronics", label: "Electronics" },
@@ -103,13 +105,12 @@ export default function AdminNewProductPage() {
         payload.stock = Number(stock);
       }
 
-      // ✅ if your backend uses /api/admin/products instead, change path here:
       const created = await apiClient<any>("/api/products", {
         method: "POST",
         json: payload,
       });
 
-      router.push(`/admin/products/${created._id}`);
+      router.push(`/api/products/${created._id}`);
     } catch (e: any) {
       console.log("CREATE PRODUCT ERROR:", e);
       setMsg(e.message || "Failed to create product");
@@ -154,7 +155,6 @@ export default function AdminNewProductPage() {
               )}
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-                {/* Left */}
                 <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4">
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <Field label="Product name *">
@@ -222,7 +222,6 @@ export default function AdminNewProductPage() {
                     </label>
                   </div>
 
-                  {/* Inventory */}
                   <div className="rounded-3xl border border-slate-200 p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -308,9 +307,9 @@ export default function AdminNewProductPage() {
                   </div>
                 </div>
 
-                {/* Right */}
                 <div className="space-y-4">
-                  <ImageUploader onUploaded={(urls) => setImages((prev) => [...prev, ...urls])} />
+                  <ManualImageUrls value={images} onChange={setImages} />
+                  
 
                   <div className="rounded-3xl border border-slate-200 bg-white p-5">
                     <div className="font-black">Images *</div>
@@ -356,7 +355,13 @@ export default function AdminNewProductPage() {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={!canSave || loading}
+                  onClick={(e) => {
+                    if (!canSave) {
+                      e.preventDefault();
+                      setMsg("Please fill all required fields (including at least 1 image).");
+                    }
+                  }}
+                  disabled={loading || !canSave}
                   className="rounded-2xl bg-sky-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 hover:opacity-90 disabled:opacity-60"
                 >
                   {loading ? "Saving..." : "Save Product"}

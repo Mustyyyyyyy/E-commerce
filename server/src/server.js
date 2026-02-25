@@ -8,3 +8,5 @@ const env = require("./config/env");
     console.log(`✅ Server running on localhost:${env.PORT}`);
   });
 })();
+
+module.exports = connectDB;

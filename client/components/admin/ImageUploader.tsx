@@ -34,6 +34,7 @@ export default function ImageUploader({ onUploaded }: { onUploaded: (urls: strin
       const BASE = process.env.NEXT_PUBLIC_API_URL || "";
       const res = await fetch(`${BASE}/api/upload`, {
         method: "POST",
+        mode:"cors",
         headers: {
           Authorization: `Bearer ${token}`,
         },

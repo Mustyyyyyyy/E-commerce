@@ -1,8 +1,12 @@
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const asyncHandler = require("../utils/asyncHandler");
 const slugify = require("../utils/slugify");
 
 exports.createProduct = asyncHandler(async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ message: "Database not connected" });
+  }
   const data = req.body;
 
   let slug = slugify(data.name);
