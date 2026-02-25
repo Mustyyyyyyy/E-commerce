@@ -1,29 +1,44 @@
 const asyncHandler = require("../utils/asyncHandler");
 const { cloudinary, cloudinaryEnabled } = require("../config/cloudinary");
 
-/**
- * This expects `req.files` from multer memory storage.
- * If Cloudinary envs are not set, it will reject (so you don’t silently use same placeholders).
- */
+function uploadBuffer(buffer, options) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+    stream.end(buffer);
+  });
+}
+
 exports.uploadImages = asyncHandler(async (req, res) => {
   if (!cloudinaryEnabled) {
     return res.status(400).json({
-      message:
-        "Cloudinary not configured. Add CLOUDINARY_* env variables to enable uploads.",
+      message: "Cloudinary not configured. Add CLOUDINARY_* env variables to enable uploads.",
     });
   }
+
+  console.log("UPLOAD HIT");
 
   const files = req.files || [];
   if (!files.length) return res.status(400).json({ message: "No files uploaded" });
 
-  const uploads = [];
+  const TIMEOUT_MS = 20000;
+  const urls = [];
+
   for (const f of files) {
-    const b64 = `data:${f.mimetype};base64,${f.buffer.toString("base64")}`;
-    const result = await cloudinary.uploader.upload(b64, {
-      folder: "brandstore/products",
-    });
-    uploads.push(result.secure_url);
+    console.log("Cloudinary uploading:", f.originalname, f.size);
+
+    const result = await Promise.race([
+      uploadBuffer(f.buffer, { folder: "brandstore/products" }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Cloudinary upload timed out")), TIMEOUT_MS)
+      ),
+    ]);
+
+    urls.push(result.secure_url);
   }
 
-  res.status(201).json({ urls: uploads });
+  console.log("UPLOAD DONE", urls.length);
+  return res.status(201).json({ urls });
 });

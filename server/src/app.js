@@ -32,6 +32,8 @@ app.use(
 
       if (origin.endsWith(".vercel.app")) return cb(null, true);
 
+      if (origin === "http://localhost:3000") return cb(null, true);
+
       return cb(new Error(`CORS blocked: ${origin}`), false);
     },
     credentials: true,
