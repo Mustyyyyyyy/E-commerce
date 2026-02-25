@@ -14,6 +14,7 @@ const orderRoutes = require("./routes/order.routes");
 const couponRoutes = require("./routes/coupon.routes");
 const adminRoutes = require("./routes/admin.routes");
 const uploadRoutes = require("./routes/upload.routes");
+
 const app = express();
 
 const allowedOrigins = (env.CLIENT_ORIGIN || "")
@@ -21,28 +22,25 @@ const allowedOrigins = (env.CLIENT_ORIGIN || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+const corsOptions = {
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); 
+
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    if (origin.endsWith(".vercel.app")) return cb(null, true);
+    if (origin === "http://localhost:3000") return cb(null, true);
+
+    return cb(new Error(`CORS blocked: ${origin}`), false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.options("*", cors(corsOptions));
+
 app.use(helmet());
-
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true); 
-
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-
-      if (origin.endsWith(".vercel.app")) return cb(null, true);
-
-      if (origin === "http://localhost:3000") return cb(null, true);
-
-      return cb(new Error(`CORS blocked: ${origin}`), false);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-app.options("*", cors());
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));

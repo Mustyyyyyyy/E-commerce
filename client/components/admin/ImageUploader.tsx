@@ -14,53 +14,49 @@ export default function ImageUploader({
   const BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
-    const picked = Array.from(e.target.files || []);
-    setFiles(picked);
+    setFiles(Array.from(e.target.files || []));
     setMsg("");
   }
 
   async function upload() {
     setMsg("");
 
-    if (!files.length) {
-      setMsg("Select at least 1 image.");
-      return;
-    }
+    if (!BASE) return setMsg("NEXT_PUBLIC_API_URL is missing.");
+    if (!files.length) return setMsg("Select at least 1 image.");
+
+    const token = localStorage.getItem("token");
+    if (!token) return setMsg("You are not logged in. Please login again.");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
 
     setLoading(true);
-
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("You are not logged in. Please login again.");
-
       const form = new FormData();
-
       for (const f of files) form.append("images", f);
 
       const res = await fetch(`${BASE}/api/upload`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }, 
+        headers: { Authorization: `Bearer ${token}` },
         body: form,
+        signal: controller.signal,
       });
 
       const data = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        throw new Error(data?.message || `Upload failed: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(data?.message || `Upload failed: ${res.status}`);
 
-      const urls: string[] = data?.urls || data?.images || data?.files || [];
-
-      if (!Array.isArray(urls) || urls.length === 0) {
-        throw new Error("Upload succeeded but no image URLs were returned.");
-      }
+      const urls: string[] = data?.urls || [];
+      if (!urls.length) throw new Error("Upload succeeded but no URLs returned.");
 
       onUploaded(urls);
       setFiles([]);
-      setMsg("Uploaded successfully");
+      setMsg("Uploaded");
     } catch (e: any) {
-      setMsg(e?.message || "Upload failed");
+      if (e?.name === "AbortError") setMsg("Upload timed out. Check backend/Cloudinary.");
+      else setMsg(e?.message || "Upload failed");
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   }
@@ -72,13 +68,7 @@ export default function ImageUploader({
         Choose 1–8 images. They’ll upload to Cloudinary and be saved into <b>images[]</b>.
       </p>
 
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={onPick}
-        className="mt-4 block w-full text-sm"
-      />
+      <input type="file" accept="image/*" multiple onChange={onPick} className="mt-4 block w-full text-sm" />
 
       {!!files.length && (
         <div className="mt-3 text-xs text-slate-500">

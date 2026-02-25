@@ -18,17 +18,13 @@ exports.uploadImages = asyncHandler(async (req, res) => {
     });
   }
 
-  console.log("UPLOAD HIT");
-
   const files = req.files || [];
   if (!files.length) return res.status(400).json({ message: "No files uploaded" });
 
-  const TIMEOUT_MS = 20000;
+  const TIMEOUT_MS = 25000;
+
   const urls = [];
-
   for (const f of files) {
-    console.log("Cloudinary uploading:", f.originalname, f.size);
-
     const result = await Promise.race([
       uploadBuffer(f.buffer, { folder: "brandstore/products" }),
       new Promise((_, reject) =>
@@ -39,6 +35,5 @@ exports.uploadImages = asyncHandler(async (req, res) => {
     urls.push(result.secure_url);
   }
 
-  console.log("UPLOAD DONE", urls.length);
   return res.status(201).json({ urls });
 });
