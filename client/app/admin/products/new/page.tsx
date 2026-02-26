@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import Navbar from "@/components/shared/Navbar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopbar from "@/components/admin/AdminTopbar";
@@ -7,9 +10,6 @@ import ManualImageUrls from "@/components/admin/ManualImageUrls";
 
 import { apiClient } from "@/lib/api-client";
 import type { ProductCategory, ProductVariant } from "@/lib/types";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: "electronics", label: "Electronics" },
@@ -19,6 +19,10 @@ const CATEGORIES: { value: ProductCategory; label: string }[] = [
 
 export default function AdminNewProductPage() {
   const router = useRouter();
+
+  useEffect(() => {
+    apiClient("/api/health", { timeoutMs: 120000 }).catch(() => {});
+  }, []);
 
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
@@ -49,9 +53,13 @@ export default function AdminNewProductPage() {
       if (!Number.isFinite(s) || s < 0) return false;
     } else {
       for (const v of variants) {
-        if (!v.name.trim() || !v.sku.trim()) return false;
-        if (!Number.isFinite(v.stock) || v.stock < 0) return false;
-        if (v.price !== undefined && (!Number.isFinite(v.price) || v.price < 0)) return false;
+        if (!v.name?.trim() || !v.sku?.trim()) return false;
+        const st = Number(v.stock);
+        if (!Number.isFinite(st) || st < 0) return false;
+        if (v.price !== undefined && v.price !== null && v.price !== ("" as any)) {
+          const pr = Number(v.price);
+          if (!Number.isFinite(pr) || pr < 0) return false;
+        }
       }
     }
     return true;
@@ -78,42 +86,66 @@ export default function AdminNewProductPage() {
     setMsg("");
 
     if (!canSave) {
-      setMsg("Please fill all required fields (including at least 1 image).");
+      setMsg("Fill all required fields (name, price, description, and at least 1 image URL).");
       return;
     }
 
     setLoading(true);
+
+    const payload: any = {
+      name: name.trim(),
+      brand: brand.trim() || undefined,
+      category,
+      price: Number(price),
+      description: description.trim(),
+      images,
+      featured,
+    };
+
+    if (hasVariants) {
+      payload.variants = variants.map((v) => ({
+        name: String(v.name || "").trim(),
+        sku: String(v.sku || "").trim(),
+        stock: Number(v.stock),
+        price:
+          v.price === undefined || v.price === null || (v.price as any) === ""
+            ? undefined
+            : Number(v.price),
+      }));
+    } else {
+      payload.stock = Number(stock);
+    }
+
     try {
-      const payload: any = {
-        name: name.trim(),
-        brand: brand.trim() || undefined,
-        category,
-        price: Number(price),
-        description: description.trim(),
-        images,
-        featured,
-      };
+      await apiClient("/api/health", { timeoutMs: 120000 }).catch(() => {});
 
-      if (hasVariants) {
-        payload.variants = variants.map((v) => ({
-          name: v.name.trim(),
-          sku: v.sku.trim(),
-          stock: Number(v.stock),
-          price: v.price === undefined ? undefined : Number(v.price),
-        }));
-      } else {
-        payload.stock = Number(stock);
-      }
-
-      const created = await apiClient<any>("/api/products", {
+      await apiClient<any>("/api/products", {
         method: "POST",
         json: payload,
+        timeoutMs: 180000,
       });
 
-      router.push(`/api/products/${created._id}`);
-    } catch (e: any) {
-      console.log("CREATE PRODUCT ERROR:", e);
-      setMsg(e.message || "Failed to create product");
+      router.push("/admin/products");
+    } catch (err: any) {
+      const m = String(err?.message || err);
+
+      if (m.toLowerCase().includes("timed out")) {
+        try {
+          await apiClient("/api/health", { timeoutMs: 120000 }).catch(() => {});
+          await apiClient<any>("/api/products", {
+            method: "POST",
+            json: payload,
+            timeoutMs: 180000,
+          });
+          router.push("/admin/products");
+          return;
+        } catch (err2: any) {
+          setMsg(err2?.message || "Create failed after retry.");
+          return;
+        }
+      }
+
+      setMsg(err?.message || "Failed to create product");
     } finally {
       setLoading(false);
     }
@@ -135,14 +167,23 @@ export default function AdminNewProductPage() {
                 <div>
                   <h1 className="text-2xl font-black text-slate-900">Add Product</h1>
                   <p className="mt-1 text-sm text-slate-500">
-                    Fill details and upload at least 1 image.
+                    Fill details and add at least 1 image URL (manual).
                   </p>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={!canSave || loading}
-                  className="rounded-2xl bg-sky-600 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 hover:opacity-90 disabled:opacity-60"
+                  disabled={loading}
+                  onClick={(e) => {
+                    if (!canSave && !loading) {
+                      e.preventDefault();
+                      setMsg("Cannot save yet: complete required fields + add an image URL.");
+                    }
+                  }}
+                  className={[
+                    "rounded-2xl px-5 py-3 text-sm font-extrabold text-white shadow-lg transition",
+                    loading ? "bg-slate-400" : canSave ? "bg-sky-600 hover:opacity-90" : "bg-sky-600/60",
+                  ].join(" ")}
                 >
                   {loading ? "Saving..." : "Save Product"}
                 </button>
@@ -227,7 +268,7 @@ export default function AdminNewProductPage() {
                       <div>
                         <div className="font-black">Inventory</div>
                         <div className="text-xs text-slate-500">
-                          Use base stock for simple products, or variants for sizes/colors.
+                          Use base stock or variants (sizes/colors).
                         </div>
                       </div>
 
@@ -279,7 +320,9 @@ export default function AdminNewProductPage() {
                               <input
                                 value={v.price === undefined ? "" : String(v.price)}
                                 onChange={(e) =>
-                                  updateVariant(idx, { price: e.target.value === "" ? undefined : Number(e.target.value) })
+                                  updateVariant(idx, {
+                                    price: e.target.value === "" ? undefined : Number(e.target.value),
+                                  })
                                 }
                                 inputMode="numeric"
                                 className="rounded-2xl bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500"
@@ -309,12 +352,11 @@ export default function AdminNewProductPage() {
 
                 <div className="space-y-4">
                   <ManualImageUrls value={images} onChange={setImages} />
-                  
 
                   <div className="rounded-3xl border border-slate-200 bg-white p-5">
                     <div className="font-black">Images *</div>
                     <div className="mt-1 text-xs text-slate-500">
-                      Upload 1–8 images. Saved into <b>images[]</b>.
+                      Add at least 1 URL. Preview below.
                     </div>
 
                     <div className="mt-4 grid grid-cols-3 gap-3">
@@ -355,14 +397,17 @@ export default function AdminNewProductPage() {
               <div className="flex justify-end">
                 <button
                   type="submit"
+                  disabled={loading}
                   onClick={(e) => {
-                    if (!canSave) {
+                    if (!canSave && !loading) {
                       e.preventDefault();
-                      setMsg("Please fill all required fields (including at least 1 image).");
+                      setMsg("Cannot save yet: complete required fields + add an image URL.");
                     }
                   }}
-                  disabled={loading || !canSave}
-                  className="rounded-2xl bg-sky-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-sky-600/20 hover:opacity-90 disabled:opacity-60"
+                  className={[
+                    "rounded-2xl px-6 py-3 text-sm font-extrabold text-white shadow-lg transition",
+                    loading ? "bg-slate-400" : canSave ? "bg-sky-600 hover:opacity-90" : "bg-sky-600/60",
+                  ].join(" ")}
                 >
                   {loading ? "Saving..." : "Save Product"}
                 </button>

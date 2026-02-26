@@ -20,7 +20,6 @@ const CATEGORIES: { value: ProductCategory; label: string }[] = [
 export default function AdminNewProductPage() {
   const router = useRouter();
 
-  // ✅ warm Render backend when this page loads
   useEffect(() => {
     apiClient("/api/health", { timeoutMs: 90000 }).catch(() => {});
   }, []);
@@ -114,14 +113,12 @@ export default function AdminNewProductPage() {
         payload.stock = Number(stock);
       }
 
-      // ✅ long timeout so Render can wake up
       const created = await apiClient<any>("/api/products", {
         method: "POST",
         json: payload,
         timeoutMs: 90000,
       });
 
-      // ✅ redirect to admin UI (not backend route)
       router.push("/admin/products");
     } catch (e: any) {
       console.log("CREATE PRODUCT ERROR:", e);
